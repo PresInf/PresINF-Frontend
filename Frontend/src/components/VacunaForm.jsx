@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import instance from "../api/axios";
 import { MdSave, MdKeyboardArrowDown, MdKeyboardArrowUp } from "react-icons/md";
 import PersonaModal from "./PersonaModal";
+import { useNotify } from "../context/notificationContext";
 
 export default function VacunaForm({
   user,
@@ -16,6 +17,7 @@ export default function VacunaForm({
   onSubmit,
   loading,
 }) {
+    const notify = useNotify();
   const [open, setOpen] = useState(true);
 
   // Pacientes / personas search
@@ -149,9 +151,16 @@ export default function VacunaForm({
       }
       try {
         setLoteLoading(true);
-        const { data: ls } = await instance.get(`/lotes?search=${encodeURIComponent(q)}`);
-        if (!mounted) return;
-        setLoteSuggestions(Array.isArray(ls) ? ls : []);
+        
+        // Filtrar siempre del cache local para búsqueda instantánea
+        const lowerQ = q.toLowerCase();
+        const filtered = lotesCache.filter(l => 
+          l.lote && l.lote.toLowerCase().includes(lowerQ)
+        );
+        
+        if (mounted) {
+          setLoteSuggestions(filtered);
+        }
       } catch (err) {
         console.warn("Error buscando lotes", err);
         if (mounted) setLoteSuggestions([]);
@@ -163,7 +172,7 @@ export default function VacunaForm({
       mounted = false;
       clearTimeout(t);
     };
-  }, [loteSearch]);
+  }, [loteSearch, lotesCache]);
 
   return (
     <div className="bg-white rounded-2xl shadow-lg ring-1 ring-gray-200 p-5 w-full max-w-full relative">
@@ -366,21 +375,38 @@ export default function VacunaForm({
                             <div className="flex-shrink-0">
                               <button type="button" onClick={async () => {
                                 if (!form._lote_search || form._lote_search.trim().length === 0) return;
+
+                                const loteTexto = form._lote_search.trim();
+                                const loteExistente = lotesCache.find(
+                                  (l) => l.lote && l.lote.toLowerCase() === loteTexto.toLowerCase()
+                                );
+
+                                if (loteExistente) {
+                                  notify.error(`El lote "${loteTexto}" ya existe`);
+                                  return;
+                                }
+
                                 setCreatingLote(true);
                                 try {
-                                  const payload = { lote: form._lote_search.trim() };
+                                  const payload = { lote: loteTexto };
                                   if (newLoteDate) payload.fecha_vencimiento = newLoteDate;
                                   const { data: created } = await instance.post('/lotes', payload);
+
                                   if (created && created.id_lote) {
-                                    setForm(f => ({ ...f, id_lote: String(created.id_lote), _lote_search: created.lote }));
-                                    setLotesCache(c => [created, ...c]);
+                                    setForm((f) => ({ ...f, id_lote: String(created.id_lote), _lote_search: created.lote }));
+                                    setLotesCache((c) => [created, ...c]);
+                                    setShowLoteSuggestions(false);
+                                    setNewLoteDate('');
+                                    notify.success('Lote creado exitosamente');
                                   }
                                 } catch (err) {
                                   console.warn('Error creando lote', err);
+                                  const errorMsg = err.response?.data?.message || 'Error al crear el lote. Intente nuevamente.';
+                                  notify.error(errorMsg);
                                 } finally {
                                   setCreatingLote(false);
                                 }
-                              }} className="px-3 py-2 bg-green-600 text-white rounded shadow">{creatingLote ? 'Creando...' : 'Crear y asociar lote'}</button>
+                              }} className="px-3 py-2 bg-green-600 text-white rounded shadow hover:bg-green-700 transition-colors">{creatingLote ? 'Creando...' : 'Crear y asociar lote'}</button>
                             </div>
                           </div>
                         </div>
