@@ -108,9 +108,23 @@ export default function VacunaForm({
       }
       try {
         setPersonaLoading(true);
-        const { data: pers } = await instance.get(`/personas?search=${encodeURIComponent(q)}`);
+        const { data: pers } = await instance.get(`/persona?search=${encodeURIComponent(q)}`);
         if (!mounted) return;
-        setPersonaSuggestions(Array.isArray(pers) ? pers : []);
+
+        let allPersons = Array.isArray(pers) ? pers : [];
+        if (allPersons.length === 0) {
+          try {
+            const resAll = await instance.get(`/persona`);
+            const lowerQ = q.toLowerCase();
+            allPersons = (Array.isArray(resAll.data) ? resAll.data : []).filter(p =>
+              (p.nombre && p.nombre.toLowerCase().includes(lowerQ)) ||
+              (p.apellido && p.apellido.toLowerCase().includes(lowerQ)) ||
+              (p.dni && String(p.dni).includes(lowerQ))
+            );
+          } catch (e) { }
+        }
+
+        setPersonaSuggestions(allPersons);
       } catch (err) {
         console.warn("Error buscando personas", err);
         if (mounted) setPersonaSuggestions([]);
@@ -231,16 +245,21 @@ export default function VacunaForm({
                           </div>
                         )}
 
-                        {/* Personas sin paciente */}
+                        {/* Personas sin paciente u otras personas */}
                         {personaSuggestions.length > 0 && (() => {
                           const patientPersonaIds = new Set();
                           (patientSuggestions || []).forEach((ps) => { if (ps.persona && ps.persona.id_persona) patientPersonaIds.add(String(ps.persona.id_persona)); });
-                          (pacientes || []).forEach((p) => { if (p.persona && p.persona.id_persona) patientPersonaIds.add(String(p.persona.id_persona)); });
+                          // Also check against selected patient if any
+                          if (form.id_paciente) {
+                            const selectedP = pacientes.find(p => String(p.id_paciente) === String(form.id_paciente));
+                            if (selectedP && selectedP.persona) patientPersonaIds.add(String(selectedP.persona.id_persona));
+                          }
+
                           const filtered = (personaSuggestions || []).filter(per => !patientPersonaIds.has(String(per.id_persona)));
                           if (filtered.length === 0) return null;
                           return (
                             <div>
-                              <div className="px-2 py-1 text-xs text-gray-500">Personas</div>
+                              <div className="px-2 py-1 text-xs text-gray-500">Personas (General)</div>
                               {filtered.map(per => (
                                 <div key={`per-${per.id_persona}`} className="p-2 hover:bg-gray-100 cursor-pointer" onMouseDown={() => { setForm((f) => ({ ...f, id_persona: String(per.id_persona), id_paciente: '', _person_search: `${per.nombre} ${per.apellido}` })); setShowSuggestions(false); setShowPersonaSuggestions(false); }}>
                                   {per.dni ? `${per.nombre} ${per.apellido} - ${per.dni}` : `${per.nombre} ${per.apellido}`}
@@ -317,7 +336,7 @@ export default function VacunaForm({
           <div className="mt-2">
             <label className="text-sm text-gray-700 font-medium">Lote</label>
             <div className="relative">
-              <input name="_lote_search" type="text" className="border rounded px-3 py-2 w-full" placeholder="Buscar o ingresar lote" value={ form._lote_search ?? (form.id_lote ? lotesCache.find((l) => String(l.id_lote) === String(form.id_lote))?.lote ?? `Lote #${form.id_lote}` : "") } onChange={(e) => { const v = e.target.value; setForm((f) => ({ ...f, _lote_search: v, id_lote: "" })); setLoteSearch(v); setShowLoteSuggestions(true); }} onFocus={() => { if ((form._lote_search ?? "").length >= LOTE_MIN) setShowLoteSuggestions(true); }} />
+              <input name="_lote_search" type="text" className="border rounded px-3 py-2 w-full" placeholder="Buscar o ingresar lote" value={form._lote_search ?? (form.id_lote ? lotesCache.find((l) => String(l.id_lote) === String(form.id_lote))?.lote ?? `Lote #${form.id_lote}` : "")} onChange={(e) => { const v = e.target.value; setForm((f) => ({ ...f, _lote_search: v, id_lote: "" })); setLoteSearch(v); setShowLoteSuggestions(true); }} onFocus={() => { if ((form._lote_search ?? "").length >= LOTE_MIN) setShowLoteSuggestions(true); }} />
               <input type="hidden" name="id_lote" value={form.id_lote ?? ""} />
 
               {showLoteSuggestions && (
