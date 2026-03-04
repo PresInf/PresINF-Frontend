@@ -1,0 +1,27 @@
+# Etapa de construcción
+FROM node:18-alpine AS builder
+WORKDIR /app
+
+# Instalar dependencias
+COPY package*.json ./
+RUN npm ci --legacy-peer-deps
+
+# Copiar el código fuente y construir el proyecto
+COPY . .
+ARG VITE_API_URL=http://localhost:3000
+ENV VITE_API_URL=${VITE_API_URL}
+RUN npm run build
+
+# Etapa de producción con Node.js
+FROM node:18-alpine AS runtime
+WORKDIR /app
+
+# Instalar un servidor estático (como serve)
+RUN npm install -g serve
+
+# Copiar los archivos estáticos generados
+COPY --from=builder /app/dist ./dist
+
+# Servir los archivos estáticos
+EXPOSE 80
+CMD ["serve", "-s", "dist", "-l", "80"]
