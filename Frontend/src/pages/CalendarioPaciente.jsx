@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import instance from '@/api/axios';
 import { useNotify } from '@/context/notificationContext';
@@ -13,14 +13,31 @@ const CalendarioPaciente = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const notify = useNotify();
+    const calendarRef = useRef(null);
     const [events, setEvents] = useState([]);
     const [loading, setLoading] = useState(true);
     const [patientName, setPatientName] = useState('');
+
+    // Select selectors state
+    const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
+    const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
+
+    const months = [
+        "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+        "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+    ];
+
+    const currentYearNum = new Date().getFullYear();
+    const years = Array.from({ length: 20 }, (_, i) => currentYearNum - 10 + i);
 
     // Modal state
     const [showModal, setShowModal] = useState(false);
     const [selectedDate, setSelectedDate] = useState(null);
     const [selectedEvents, setSelectedEvents] = useState([]);
+
+    // Confirm Delete Modal state
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
+    const [citaToDelete, setCitaToDelete] = useState(null);
 
     const parseDateFromDB = (val) => {
         if (!val) return null;
@@ -118,41 +135,74 @@ const CalendarioPaciente = () => {
         setShowModal(true);
     };
 
-    const handleDeleteFromModal = async (idCita) => {
-        if (!window.confirm('¿Estás seguro de eliminar esta cita?')) return;
+    const handleDeleteFromModal = (idCita) => {
+        setCitaToDelete(idCita);
+        setShowConfirmModal(true);
+    };
+
+    const confirmDelete = async () => {
+        if (!citaToDelete) return;
         try {
-            await instance.delete(`/citas/${idCita}`);
-            notify.success('✅ Cita eliminada correctamente');
+            await instance.delete(`/citas/${citaToDelete}`);
+            notify.success('Cita eliminada correctamente');
             await loadCitas();
+            setShowConfirmModal(false);
             setShowModal(false);
+            setCitaToDelete(null);
         } catch (error) {
             const message = getErrorMessage(error);
-            notify.error(`❌ No se pudo eliminar la cita: ${message}`);
+            notify.error(`No se pudo eliminar la cita: ${message}`);
+            setShowConfirmModal(false);
+            setCitaToDelete(null);
         }
+    };
+
+    const cancelDelete = () => {
+        setShowConfirmModal(false);
+        setCitaToDelete(null);
     };
 
     useEffect(() => {
         if (id) loadCitas();
     }, [id]);
 
+    useEffect(() => {
+        if (calendarRef.current) {
+            const calendarApi = calendarRef.current.getApi();
+            calendarApi.gotoDate(new Date(currentYear, currentMonth, 1));
+        }
+    }, [currentMonth, currentYear]);
+
+    const handleMonthChange = (e) => {
+        setCurrentMonth(parseInt(e.target.value, 10));
+    };
+
+    const handleYearChange = (e) => {
+        setCurrentYear(parseInt(e.target.value, 10));
+    };
+
     // Close modal on Escape key
     useEffect(() => {
         const handleEsc = (event) => {
             if (event.key === 'Escape') {
-                setShowModal(false);
+                if (showConfirmModal) {
+                    setShowConfirmModal(false);
+                    setCitaToDelete(null);
+                } else {
+                    setShowModal(false);
+                }
             }
         };
-        if (showModal) {
+        if (showModal || showConfirmModal) {
             window.addEventListener('keydown', handleEsc);
         }
         return () => {
             window.removeEventListener('keydown', handleEsc);
         };
-    }, [showModal]);
+    }, [showModal, showConfirmModal]);
 
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative">
-            {/* Overrides for FullCalendar links and buttons */}
             <style>{`
                 .fc-daygrid-day-number, .fc-col-header-cell-cushion {
                     color: #000 !important;
@@ -162,23 +212,18 @@ const CalendarioPaciente = () => {
                     color: #000 !important;
                     text-decoration: none !important;
                 }
-                /* FullCalendar Buttons Override */
-                .fc-button-primary {
-                    background-color: #0d6efd !important;
-                    border-color: #0d6efd !important;
+                .fc-toolbar-chunk:first-child {
+                   display: none !important;
                 }
-                .fc-button-primary:hover {
-                    background-color: #0b5ed7 !important;
-                    border-color: #0a58ca !important;
+                .fc-toolbar-chunk:last-child {
+                    display: none !important;
                 }
-                .fc-button-primary:disabled {
-                    background-color: #0d6efd !important;
-                    border-color: #0d6efd !important;
-                    opacity: 0.65;
+                .fc-toolbar-title {
+                    font-size: 1.25rem !important;
+                    color: #495057;
                 }
-                .fc-button-active {
-                    background-color: #0a58ca !important;
-                    border-color: #0a53be !important;
+                .fc .fc-toolbar.fc-header-toolbar {
+                    margin-bottom: 0 !important;
                 }
             `}</style>
 
@@ -199,15 +244,35 @@ const CalendarioPaciente = () => {
             )}
 
             <div className="bg-white shadow rounded-lg p-6">
+                <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+                    <div className="flex gap-4">
+                        <select
+                            value={currentMonth}
+                            onChange={handleMonthChange}
+                            className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:max-w-xs sm:text-sm sm:leading-6"
+                        >
+                            {months.map((month, index) => (
+                                <option key={index} value={index}>{month}</option>
+                            ))}
+                        </select>
+                        <select
+                            value={currentYear}
+                            onChange={handleYearChange}
+                            className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:max-w-xs sm:text-sm sm:leading-6"
+                        >
+                            {years.map(year => (
+                                <option key={year} value={year}>{year}</option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
+
                 <FullCalendar
+                    ref={calendarRef}
                     plugins={[dayGridPlugin, interactionPlugin]}
                     initialView="dayGridMonth"
                     locale={esLocale}
-                    headerToolbar={{
-                        left: 'prev,next today',
-                        center: 'title',
-                        right: 'dayGridMonth,dayGridYear'
-                    }}
+                    headerToolbar={false}
                     events={events}
                     dateClick={handleDateClick}
                     eventClick={handleEventClick}
@@ -285,6 +350,36 @@ const CalendarioPaciente = () => {
                             >
                                 Cerrar
                             </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal Confirmación de Eliminación */}
+            {showConfirmModal && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 sm:p-6" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+                    <div className="bg-white rounded-lg shadow-xl w-full max-w-sm overflow-hidden transform transition-all">
+                        <div className="p-6 text-center">
+                            <svg className="mx-auto mb-4 text-[#6c757d] w-12 h-12" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
+                                <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 11V6m0 8h.01M19 10a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                            </svg>
+                            <h3 className="mb-5 text-lg font-medium text-[#212529]">¿Estás seguro de eliminar esta cita?</h3>
+                            <div className="flex justify-center gap-4">
+                                <button
+                                    onClick={confirmDelete}
+                                    type="button"
+                                    className="px-4 py-2 bg-[#dc3545] text-white rounded-md hover:bg-[#bb2d3b] transition-colors focus:outline-none focus:ring-2 focus:ring-[#dc3545] focus:ring-offset-2"
+                                >
+                                    Sí, eliminar
+                                </button>
+                                <button
+                                    onClick={cancelDelete}
+                                    type="button"
+                                    className="px-4 py-2 bg-white text-[#6c757d] border border-[#dee2e6] rounded-md hover:bg-[#f8f9fa] transition-colors focus:outline-none focus:ring-2 focus:ring-[#dee2e6] focus:ring-offset-2"
+                                >
+                                    Cancelar
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>

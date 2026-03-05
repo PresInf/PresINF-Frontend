@@ -32,6 +32,7 @@ const Dashboard = () => {
   const [pacientes, setPacientes] = useState(0);
   const [vacunasAplicadas, setVacunasAplicadas] = useState(0);
   const [recent, setRecent] = useState([]);
+  const [upcomingCitas, setUpcomingCitas] = useState([]);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -43,12 +44,14 @@ const Dashboard = () => {
           vacunasMesRes,
           coberturaRes,
           recentRes,
+          upcomingRes,
         ] = await Promise.all([
           instance.get("/pacientes/count"),
           instance.get("/dosis-aplicada/count"),
           instance.get("/estadisticas/vacunas_mes?months=6"),
           instance.get("/estadisticas/cobertura"),
           instance.get("/pacientes/recent?limit=5"),
+          instance.get("/citas/upcoming?limit=5"),
         ]);
 
         setPacientes(pacientesRes.data.count ?? pacientesRes.data);
@@ -86,6 +89,7 @@ const Dashboard = () => {
         });
 
         setRecent(Array.isArray(recentRes.data) ? recentRes.data : []);
+        setUpcomingCitas(Array.isArray(upcomingRes.data) ? upcomingRes.data : []);
       } catch (err) {
         console.error("Dashboard load error:", err);
         setPacientes((p) => p || 0);
@@ -192,21 +196,19 @@ const Dashboard = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  <tr>
-                    <td>Vacuna Hepatitis B</td>
-                    <td>Juan Pérez</td>
-                    <td>2025-07-25</td>
-                  </tr>
-                  <tr>
-                    <td>Refuerzo DTP</td>
-                    <td>María López</td>
-                    <td>2025-07-27</td>
-                  </tr>
-                  <tr>
-                    <td>Vacuna SRP</td>
-                    <td>Carlos Gómez</td>
-                    <td>2025-08-01</td>
-                  </tr>
+                  {upcomingCitas.length
+                    ? upcomingCitas.map((cita) => (
+                      <tr key={cita.id_cita}>
+                        <td>{cita.vacuna?.nombre}</td>
+                        <td>{cita.paciente?.persona?.nombre} {cita.paciente?.persona?.apellido}</td>
+                        <td>{cita.fecha_cita ? cita.fecha_cita.split('T')[0] : 'N/A'}</td>
+                      </tr>
+                    ))
+                    : (
+                      <tr>
+                        <td colSpan="3" className="text-center">No hay citas próximas</td>
+                      </tr>
+                    )}
                 </tbody>
               </table>
             </div>
