@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import instance from '../api/axios';
 import { useNotify } from '../context/notificationContext';
+import { getErrorMessage } from '../utils/errorHandler';
 
 const LogDetailPage = () => {
   const { id } = useParams();
@@ -17,7 +18,8 @@ const LogDetailPage = () => {
         const response = await instance.get(`/logs/${id}`);
         setLog(response.data);
       } catch (error) {
-        notify.error('Error al cargar el detalle del log');
+        const message = getErrorMessage(error);
+        notify.error(`❌ ${message}`);
         console.error('Error:', error);
       } finally {
         setLoading(false);

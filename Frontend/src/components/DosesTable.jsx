@@ -3,6 +3,8 @@ import Papa from 'papaparse';
 import { validateAndNormalizeData } from "../utils/validateAndNormalizeData";
 import instance from '../api/axios';
 import { useAuth } from '../context/authContext';
+import { useNotify } from '../context/notificationContext';
+import { getErrorMessage } from '../utils/errorHandler';
 import { MdEdit, MdDelete, MdSave, MdClose } from "react-icons/md";
 
 const DosesTable = (props) => {
@@ -17,6 +19,7 @@ const DosesTable = (props) => {
         hideInternalFilter = false,
     } = props;
     const { user } = useAuth();
+    const notify = useNotify();
     const [showFilter, setShowFilter] = useState(false);
     const [filters, setFilters] = useState({ id_vacuna: '', id_paciente: '', fecha_desde: '', fecha_hasta: '', id_lote: '' });
     const [patientSearch, setPatientSearch] = useState('');
@@ -37,7 +40,7 @@ const DosesTable = (props) => {
 
                 if (errors.length > 0) {
                     console.error("Errores encontrados:", errors);
-                    alert(`Se encontraron errores:\n${errors.join("\n")}`);
+                    notify.error(`❌ Se encontraron errores en los datos:\n${errors.join("\n")}`);
                     return;
                 }
 
@@ -71,12 +74,13 @@ const DosesTable = (props) => {
                 setImportWarnings(resp.warnings);
                 setShowWarningsModal(true);
             } else {
+                notify.success('✅ Dosis importadas correctamente');
                 setShowSuccessModal(true);
             }
         } catch (error) {
+            const message = getErrorMessage(error);
+            notify.error(`❌ ${message}`);
             console.error('Error en la solicitud:', error);
-            const msg = error?.response?.data || error.message || 'Error al conectar con el servidor.';
-            alert(`Error al cargar los datos: ${JSON.stringify(msg)}`);
         }
     };
     const getIsoDate = (value) => {

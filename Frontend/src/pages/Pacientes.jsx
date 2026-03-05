@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import instance from "../api/axios";
 import { useNotify } from "../context/notificationContext";
+import { getErrorMessage } from "../utils/errorHandler";
 import PersonaForm from "../components/PersonaForm";
 
 const Pacientes = () => {
@@ -58,8 +59,8 @@ const Pacientes = () => {
         num_telefono: "",
       });
     } catch (error) {
-      const msg = error?.response?.data?.message || "Error al registrar paciente";
-      notify.error(msg);
+      const msg = getErrorMessage(error);
+      notify.error(`❌ ${msg}`);
       console.error("Error del backend:", error);
     }
   };

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import instance from '@/api/axios';
 import { useNotify } from '@/context/notificationContext';
+import { getErrorMessage } from '@/utils/errorHandler';
 
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
@@ -92,7 +93,8 @@ const CalendarioPaciente = () => {
             setEvents(mappedEvents);
 
         } catch (error) {
-            notify.error('Error al cargar el calendario');
+            const message = getErrorMessage(error);
+            notify.error(`❌ ${message}`);
         } finally {
             setLoading(false);
         }
@@ -120,11 +122,12 @@ const CalendarioPaciente = () => {
         if (!window.confirm('¿Estás seguro de eliminar esta cita?')) return;
         try {
             await instance.delete(`/citas/${idCita}`);
-            notify.success('Cita eliminada');
+            notify.success('✅ Cita eliminada correctamente');
             await loadCitas();
             setShowModal(false);
         } catch (error) {
-            notify.error('Error al eliminar la cita');
+            const message = getErrorMessage(error);
+            notify.error(`❌ No se pudo eliminar la cita: ${message}`);
         }
     };
 
