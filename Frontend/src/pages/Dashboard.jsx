@@ -142,7 +142,7 @@ const Dashboard = () => {
           <div className="card text-white bg-danger h-100">
             <div className="card-body">
               <h5 className="card-title">Alertas</h5>
-              <h2>27</h2>
+              <h2>{upcomingCitas.length}</h2>
             </div>
           </div>
         </div>
