@@ -89,20 +89,33 @@ const CalendarioPaciente = () => {
             const mappedEvents = (data || []).map(c => {
                 const fecha = parseDateFromDB(c.fecha_cita);
                 const isPast = fecha && fecha < todayOnly;
+                const isAplicada = c.aplicada === true;
                 const vacunaName = c.vacuna?.nombre ?? c.vacuna?.vacunas ?? 'Vacuna';
                 const dosis = getDosisInfo(c);
+
+                let estadoVal = isPast ? 'Vencida' : 'Programada';
+                let bgColor = isPast ? '#ef4444' : '#3b82f6';
+                let estadoClass = isPast ? 'bg-[#f8d7da] text-[#842029]' : 'bg-[#8bb5faff] text-[#1c59bbff]';
+
+                if (isAplicada) {
+                    estadoVal = 'Aplicada';
+                    bgColor = '#10b981';
+                    estadoClass = 'bg-[#d1e7dd] text-[#0f5132]';
+                }
 
                 return {
                     id: String(c.id_cita),
                     title: `${vacunaName} ${dosis ? `(${dosis})` : ''}`,
                     start: c.fecha_cita ? c.fecha_cita.split('T')[0] : undefined,
-                    backgroundColor: isPast ? '#ef4444' : '#10b981',
-                    borderColor: isPast ? '#ef4444' : '#10b981',
+                    backgroundColor: bgColor,
+                    borderColor: bgColor,
                     extendedProps: {
                         vacuna: vacunaName,
                         dosis: dosis,
-                        estado: isPast ? 'Vencida' : 'Programada',
-                        id_cita: c.id_cita
+                        estado: estadoVal,
+                        estadoClass: estadoClass,
+                        id_cita: c.id_cita,
+                        aplicada: isAplicada
                     }
                 };
             });
@@ -265,6 +278,21 @@ const CalendarioPaciente = () => {
                             ))}
                         </select>
                     </div>
+
+                    <div className="flex items-center gap-4 text-sm text-gray-600">
+                        <div className="flex items-center gap-1.5 border border-gray-200 rounded-md px-2 py-1 bg-gray-50">
+                            <span className="w-3 h-3 rounded-full bg-[#10b981]"></span>
+                            <span className="font-medium">Aplicada</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 border border-gray-200 rounded-md px-2 py-1 bg-gray-50">
+                            <span className="w-3 h-3 rounded-full bg-[#3b82f6]"></span>
+                            <span className="font-medium">Programada</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 border border-gray-200 rounded-md px-2 py-1 bg-gray-50">
+                            <span className="w-3 h-3 rounded-full bg-[#ef4444]"></span>
+                            <span className="font-medium">Vencida</span>
+                        </div>
+                    </div>
                 </div>
 
                 <FullCalendar
@@ -322,10 +350,7 @@ const CalendarioPaciente = () => {
                                             <div>
                                                 <p className="text-sm font-medium text-[#212529]">{evt.extendedProps.vacuna}</p>
                                                 <p className="text-sm text-[#6c757d]">{evt.extendedProps.dosis}</p>
-                                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium mt-2 ${evt.extendedProps.estado === 'Vencida'
-                                                    ? 'bg-[#f8d7da] text-[#842029]'
-                                                    : 'bg-[#d1e7dd] text-[#0f5132]'
-                                                    }`}>
+                                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium mt-2 ${evt.extendedProps.estadoClass}`}>
                                                     {evt.extendedProps.estado}
                                                 </span>
                                             </div>
