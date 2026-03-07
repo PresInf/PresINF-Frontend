@@ -9,6 +9,8 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import esLocale from '@fullcalendar/core/locales/es';
 
+import socket from '../api/socket';
+
 const CalendarioPaciente = () => {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -178,6 +180,25 @@ const CalendarioPaciente = () => {
     useEffect(() => {
         if (id) loadCitas();
     }, [id]);
+
+    useEffect(() => {
+        // Definimos la acción a ejecutar cuando el backend avise del cambio
+        const handleCambioCalendario = () => {
+            console.log('Recálculo o cambio detectado en el servidor. Actualizando calendario...');
+            if (id) {
+                loadCitas();
+            }
+        };
+
+        // Nos suscribimos al evento exacto que emite tu backend en NestJS
+        socket.on('dosisChanged', handleCambioCalendario);
+
+        // Limpieza fundamental: dejamos de escuchar cuando el componente se desmonta
+        // para evitar que loadCitas se ejecute múltiples veces en el futuro
+        return () => {
+            socket.off('dosisChanged', handleCambioCalendario);
+        };
+    }, [id]); // Ponemos 'id' en el arreglo de dependencias por si el usuario cambia de paciente
 
     useEffect(() => {
         if (calendarRef.current) {
