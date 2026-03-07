@@ -39,15 +39,26 @@ export const AuthProvider = ({ children }) => {
 
   const signIn = async (userData) => {
     try {
-      await loginRequest(userData);
+      const loginRes = await loginRequest(userData);
+      const { token, user } = loginRes.data;
+      
+      // Guardar token en localStorage
+      if (token) {
+        localStorage.setItem('token', token);
+      }
+      
+      // Verificar token para obtener datos completos del usuario
       const res = await verifyTokenRequest();
       setUser(res.data);
       setIsAuthenticated(true);
+      localStorage.setItem('user', JSON.stringify(res.data));
       notify.success("Inicio de sesión exitoso");
     } catch (err) {
       const msg = normalizeError(err);
       setUser(null);
       setIsAuthenticated(false);
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
       setErrors([msg]);
       notify.error(msg);
     }
@@ -56,6 +67,7 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     try {
       await instance.post("/auth/logout");
+      localStorage.removeItem("token");
       localStorage.removeItem("user");
       sessionStorage.removeItem("pushAlertShownId");
       setUser(null);
@@ -63,6 +75,7 @@ export const AuthProvider = ({ children }) => {
       notify.info("Sesión cerrada");
     } catch (err) {
       const msg = normalizeError(err);
+      localStorage.removeItem("token");
       localStorage.removeItem("user");
       sessionStorage.removeItem("pushAlertShownId");
       setUser(null);
@@ -84,6 +97,15 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const checkLogin = async () => {
+      const token = localStorage.getItem('token');
+      
+      if (!token) {
+        setIsAuthenticated(false);
+        setUser(null);
+        setLoading(false);
+        return;
+      }
+      
       try {
         const res = await verifyTokenRequest();
         setIsAuthenticated(true);
@@ -92,6 +114,7 @@ export const AuthProvider = ({ children }) => {
       } catch (error) {
         setIsAuthenticated(false);
         setUser(null);
+        localStorage.removeItem("token");
         localStorage.removeItem("user");
       } finally {
         setLoading(false);
