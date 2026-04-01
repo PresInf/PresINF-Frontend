@@ -30,7 +30,7 @@ const CalendarioPaciente = () => {
     ];
 
     const currentYearNum = new Date().getFullYear();
-    const years = Array.from({ length: 20 }, (_, i) => currentYearNum - 10 + i);
+    const years = Array.from({ length: 120 }, (_, i) => currentYearNum - 100 + i);
 
     // Modal state
     const [showModal, setShowModal] = useState(false);
