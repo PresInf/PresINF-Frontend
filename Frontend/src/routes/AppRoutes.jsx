@@ -18,6 +18,8 @@ import LogDetailPage from '../pages/LogDetailPage';
 import { PublicRoutes } from "./PublicRoutes";
 import { PrivateRoutes } from "./PrivateRoutes";
 import ProtectedRoute from "../components/ProtectedRoute";
+import ResetPasswordPage from "../pages/ResetPasswordPage";
+import ForgotPasswordPage from "../pages/ForgotPasswordPage";
 import Vacunas from "../pages/Vacunas";
 
 export const AppRouter = () => {
@@ -27,6 +29,8 @@ export const AppRouter = () => {
         <Route element={<PublicRoutes />}>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         </Route>
 
         <Route element={<PrivateRoutes />}>

@@ -12,7 +12,6 @@ function LoginPage() {
   const onSubmit = handleSubmit(async data => {
     try {
       await signIn(data, navigate);
-      // La redirección ya se maneja en signIn según el rol
     } catch (error) {
       console.error(error);
     }
@@ -58,10 +57,9 @@ function LoginPage() {
           </button>
         </form>
 
-        <p className="text-center">
-          ¿No tienes cuenta?{' '}
-          <Link className="text-primary" to="/Register">
-            Regístrate aquí
+        <p className="text-center mb-0">
+          <Link className="text-primary" to="/forgot-password">
+            ¿Olvidaste tu contraseña?
           </Link>
         </p>
       </div>
