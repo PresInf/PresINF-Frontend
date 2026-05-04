@@ -18,7 +18,13 @@ export const NotificationProvider = ({ children }) => {
 
   const push = useCallback((type, message, opts = {}) => {
     const id = crypto.randomUUID?.() || Math.random().toString(36).slice(2);
-    const toast = { id, type, message, duration: opts.duration ?? 4000 };
+    const toast = {
+      id,
+      type,
+      message,
+      duration: opts.duration ?? 4000,
+      action: opts.action, // { label, onClick }
+    };
     setToasts((prev) => [...prev, toast]);
     return id;
   }, []);
@@ -27,6 +33,8 @@ export const NotificationProvider = ({ children }) => {
     success: (msg, opts) => push('success', msg, opts),
     error: (msg, opts) => push('error', msg, opts),
     info: (msg, opts) => push('info', msg, opts),
+    warning: (msg, opts) => push('warning', msg, opts),
+    loading: (msg, opts) => push('loading', msg, { ...opts, duration: 0 }), // No auto-close
     vacuna: (msg, opts) => push('vacuna', msg, opts),
     remove,
   }), [push, remove]);
@@ -37,7 +45,14 @@ export const NotificationProvider = ({ children }) => {
       {/* Container de toasts */}
       <div className="fixed z-[60] bottom-4 right-4 flex flex-col gap-2 max-w-[90vw] sm:max-w-md">
         {toasts.map((t) => (
-          <Toast key={t.id} type={t.type} message={t.message} duration={t.duration} onClose={() => remove(t.id)} />
+          <Toast
+            key={t.id}
+            type={t.type}
+            message={t.message}
+            duration={t.duration}
+            action={t.action}
+            onClose={() => remove(t.id)}
+          />
         ))}
       </div>
     </NotificationContext.Provider>
