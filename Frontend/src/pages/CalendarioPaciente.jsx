@@ -75,7 +75,13 @@ const CalendarioPaciente = () => {
     const loadCitas = async () => {
         setLoading(true);
         try {
-            const { data } = await instance.get(`/citas/paciente/${id}`);
+            const startDate = new Date(currentYear, currentMonth, 1);
+            const startStr = startDate.toISOString().split('T')[0];
+            
+            const endDate = new Date(currentYear, currentMonth + 1, 0);
+            const endStr = endDate.toISOString().split('T')[0];
+
+            const { data } = await instance.get(`/citas/paciente/${id}?start=${startStr}&end=${endStr}`);
 
             if (data && data.length > 0) {
                 const p = data[0].paciente;
@@ -179,7 +185,7 @@ const CalendarioPaciente = () => {
 
     useEffect(() => {
         if (id) loadCitas();
-    }, [id]);
+    }, [id, currentMonth, currentYear]);
 
     useEffect(() => {
         // Definimos la acción a ejecutar cuando el backend avise del cambio

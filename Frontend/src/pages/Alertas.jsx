@@ -9,6 +9,8 @@ const Alertas = () => {
   const [error, setError] = useState(null);
   const [pacientes, setPacientes] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 7;
   const navigate = useNavigate();
   const notify = useNotify();
 
@@ -57,6 +59,15 @@ const Alertas = () => {
     return fullName.toLowerCase().includes(search) || dni.includes(search);
   });
 
+  const totalPages = Math.ceil(filteredPacientes.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedPacientes = filteredPacientes.slice(startIndex, startIndex + itemsPerPage);
+
+  // Reset page when search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+
   return (
     <div className="container my-5">
       <div className="d-flex justify-content-between align-items-center mb-4">
@@ -100,14 +111,14 @@ const Alertas = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredPacientes.length === 0 ? (
+                  {paginatedPacientes.length === 0 ? (
                     <tr>
                       <td colSpan="4" className="text-center p-4 text-muted">
                         No se encontraron pacientes
                       </td>
                     </tr>
                   ) : (
-                    filteredPacientes.map((p) => (
+                    paginatedPacientes.map((p) => (
                       <tr key={p.id_paciente}>
                         <td className="p-3 align-middle">
                           {p.persona ? `${p.persona.nombre} ${p.persona.apellido}` : `Paciente #${p.id_paciente}`}
@@ -137,8 +148,27 @@ const Alertas = () => {
               </table>
             </div>
           </div>
-          <div className="card-footer text-muted small">
-            Total: {filteredPacientes.length} pacientes
+          <div className="card-footer d-flex justify-content-between align-items-center text-muted small">
+            <span>Total: {filteredPacientes.length} pacientes</span>
+            {totalPages > 1 && (
+              <div className="d-flex gap-2">
+                <button 
+                  className="btn btn-sm btn-outline-secondary" 
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                >
+                  Anterior
+                </button>
+                <span className="d-flex align-items-center px-2">Página {currentPage} de {totalPages}</span>
+                <button 
+                  className="btn btn-sm btn-outline-secondary" 
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  Siguiente
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
