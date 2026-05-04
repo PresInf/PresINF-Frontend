@@ -13,33 +13,20 @@ const GlobalAlertChecker = ({ thresholdDays = 3 }) => {
 
     const loadAndNotify = async () => {
       try {
-        const { data: pacientes } = await instance.get('/pacientes');
-        const requests = (Array.isArray(pacientes) ? pacientes : []).map((p) => {
-          const idPaciente = p.id_paciente ?? p.id ?? null;
-          if (!idPaciente) return Promise.resolve({ status: 'skipped', value: [] });
-          return instance.get(`/citas/paciente/${idPaciente}`);
-        });
+        const { data: allCitas } = await instance.get('/citas/upcoming?limit=20');
 
-        const results = await Promise.allSettled(requests);
-        const allCitas = [];
-        results.forEach((r) => {
-          if (r.status === 'fulfilled') {
-            const d = r.value?.data;
-            if (Array.isArray(d)) allCitas.push(...d);
-          }
-        });
-
-        if (!mounted || allCitas.length === 0) return;
+        if (!mounted || !allCitas || allCitas.length === 0) return;
 
         const toDateOnly = (dt) => new Date(dt.getFullYear(), dt.getMonth(), dt.getDate());
         const msPerDay = 24 * 60 * 60 * 1000;
         const todayOnly = toDateOnly(new Date()).getTime();
+
         const candidates = allCitas
           .map((c) => ({ cita: c, fecha: c.fecha_cita ? toDateOnly(new Date(c.fecha_cita.replace(/-/g, '/'))).getTime() : null }))
           .filter((x) => x.fecha !== null)
           .map((x) => ({ ...x, daysLeft: Math.floor((x.fecha - todayOnly) / msPerDay) }))
           .filter((x) => x.daysLeft >= 0 && x.daysLeft <= thresholdDays)
-          .sort((a, b) => a.daysLeft - b.b.daysLeft);
+          .sort((a, b) => a.daysLeft - b.daysLeft);
 
         if (candidates.length === 0) return;
         const nearest = candidates[0];

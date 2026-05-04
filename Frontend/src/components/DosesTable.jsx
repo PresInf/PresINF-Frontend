@@ -21,12 +21,32 @@ const DosesTable = (props) => {
     const { user } = useAuth();
     const notify = useNotify();
     const [showFilter, setShowFilter] = useState(false);
-    const [filters, setFilters] = useState({ id_vacuna: '', id_paciente: '', fecha_desde: '', fecha_hasta: '', id_lote: '' });
+    const [filters, setFilters] = useState({ id_vacuna: '', id_paciente: '', fecha_desde: '', fecha_hasta: '', id_lote: '', dosis_numero: '' });
     const [patientSearch, setPatientSearch] = useState('');
     const [patientSuggestions, setPatientSuggestions] = useState([]);
     const [patientLoading, setPatientLoading] = useState(false);
     const [showPatientSuggestions, setShowPatientSuggestions] = useState(false);
     const PATIENT_MIN_CHARS = 2;
+
+    const getDosisLabel = (dosisNumero) => {
+        const dosis = Number(dosisNumero);
+        switch (dosis) {
+            case 1:
+                return '1ª Dosis';
+            case 2:
+                return '2ª Dosis';
+            case 3:
+                return '3ª Dosis';
+            case 4:
+                return '1er Refuerzo';
+            case 5:
+                return '2do Refuerzo';
+            case 6:
+                return '3er Refuerzo';
+            default:
+                return 'Dosis desconocida';
+        }
+    };
 
     const handleFileUpload = (file) => {
         Papa.parse(file, {
@@ -40,7 +60,7 @@ const DosesTable = (props) => {
 
                 if (errors.length > 0) {
                     console.error("Errores encontrados:", errors);
-                    notify.error(`❌ Se encontraron errores en los datos:\n${errors.join("\n")}`);
+                    notify.error(`${message}`);
                     return;
                 }
 
@@ -74,12 +94,12 @@ const DosesTable = (props) => {
                 setImportWarnings(resp.warnings);
                 setShowWarningsModal(true);
             } else {
-                notify.success('✅ Dosis importadas correctamente');
+                notify.success('Dosis importadas correctamente');
                 setShowSuccessModal(true);
             }
         } catch (error) {
             const message = getErrorMessage(error);
-            notify.error(`❌ ${message}`);
+            notify.error(`${message}`);
             console.error('Error en la solicitud:', error);
         }
     };
@@ -106,6 +126,7 @@ const DosesTable = (props) => {
         const applied = externalFilters || filters;
         return lista.filter(d => {
             if (applied.id_vacuna && String(applied.id_vacuna) !== String(d.id_vacuna ?? d.vacuna?.id_vacuna ?? '')) return false;
+            if (applied.dosis_numero && Number(applied.dosis_numero) !== Number(d.dosis_numero ?? '')) return false;
             if (applied.id_paciente) {
                 const val = String(applied.id_paciente);
                 if (val.startsWith('patient:')) {
@@ -363,6 +384,16 @@ const DosesTable = (props) => {
                             </select>
                         </div>
 
+                        <div>
+                            <label className="text-sm text-gray-600">Dosis</label>
+                            <select className="w-full mt-1 border rounded px-3 py-2 bg-white" value={filters.dosis_numero} onChange={(e) => setFilters(f => ({ ...f, dosis_numero: e.target.value }))}>
+                                <option value="">Todas las dosis</option>
+                                {[1, 2, 3, 4, 5, 6].map(num => (
+                                    <option key={num} value={String(num)}>{getDosisLabel(num)}</option>
+                                ))}
+                            </select>
+                        </div>
+
                         <div className="relative">
                             <label className="text-sm text-gray-600">Paciente</label>
                             <input
@@ -446,7 +477,7 @@ const DosesTable = (props) => {
                     </div>
                     <div className="mt-3 flex items-center gap-2">
                         <button className="bg-blue-600 text-white px-4 py-1 rounded" onClick={() => {/* filtros aplican automáticamente */ }}>Aplicar</button>
-                        <button className="bg-gray-200 text-gray-800 px-4 py-1 rounded" onClick={() => setFilters({ id_vacuna: '', id_paciente: '', fecha_desde: '', fecha_hasta: '', id_lote: '' })}>Limpiar</button>
+                        <button className="bg-gray-200 text-gray-800 px-4 py-1 rounded" onClick={() => setFilters({ id_vacuna: '', id_paciente: '', fecha_desde: '', fecha_hasta: '', id_lote: '', dosis_numero: '' })}>Limpiar</button>
                     </div>
                 </div>
             )}
@@ -461,6 +492,7 @@ const DosesTable = (props) => {
                                 <th className="py-2 px-4 border-b">Paciente</th>
                                 <th className="py-2 px-4 border-b">Vacunador</th>
                                 <th className="py-2 px-4 border-b">Lote</th>
+                                <th className="py-2 px-4 border-b">Dosis</th>
                                 <th className="py-2 px-4 border-b">Acciones</th>
                             </tr>
 
@@ -473,6 +505,7 @@ const DosesTable = (props) => {
                                     <td className="py-2 px-4 border-b">{d.paciente?.persona ? `${d.paciente.persona.nombre} ${d.paciente.persona.apellido}${d.paciente.persona.dni ? ` — ${d.paciente.persona.dni}` : ''}` : (d.id_paciente ? `Paciente #${d.id_paciente}` : "—")}</td>
                                     <td className="py-2 px-4 border-b">{d.vacunador?.nombre ?? `Usuario #${d.id_vacunador ?? "?"}`}</td>
                                     <td className="py-2 px-4 border-b">{d.lote?.lote ?? (d.id_lote ? `Lote #${d.id_lote}` : '—')}</td>
+                                    <td className="py-2 px-4 border-b">{getDosisLabel(d.dosis_numero)}</td>
                                     <td className="py-2 px-4 border-b">
                                         <div className="flex gap-2">
                                             <button className="bg-yellow-500 text-white px-3 py-1 rounded flex items-center gap-1" onClick={() => onStartEditDose(d)}><MdEdit /> Editar</button>
