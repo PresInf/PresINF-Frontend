@@ -33,8 +33,8 @@ export default function Graficos() {
 
   const [data, setData] = useState({});
   const [anio, setAnio] = useState(yearActual);
-  const [semestre, setSemestre] = useState(1);
-  const [loading, setLoading] = useState(true);
+  const [trimestre, setTrimestre] = useState(1);
+  const [loadingData, setLoadingData] = useState(false);
 
   const chartOptions = {
     responsive: true,
@@ -58,27 +58,26 @@ export default function Graficos() {
   useEffect(() => {
     const obtenerDatos = async () => {
       try {
-        setLoading(true);
-        const res = await instance.get(`/estadisticas/${anio}/${semestre}`);
-        console.log(`Datos para ${anio} - Semestre ${semestre}:`, res.data);
+        setLoadingData(true);
+        const res = await instance.get(`/estadisticas/${anio}/${trimestre}`);
         setData(res.data || {});
       } catch (error) {
         console.error("Error al obtener datos:", error.response?.data || error.message);
         setData({});
       } finally {
-        setLoading(false);
+        setLoadingData(false);
       }
     };
 
     obtenerDatos();
-  }, [anio, semestre]);
+  }, [anio, trimestre]);
 
-  if (loading) {
+  if (loadingData) {
     return <p className="p-6">Cargando estadísticas...</p>;
   }
 
   if (!data || Object.keys(data).length === 0) {
-    return <p className="p-6">No hay datos para el año {anio}, Semestre {semestre}</p>;
+    return <p className="p-6">No hay datos para el año {anio}, Trimestre {trimestre}</p>;
   }
 
   const colors = [
@@ -102,20 +101,25 @@ export default function Graficos() {
             onChange={(e) => setAnio(Number(e.target.value))}
             className="border rounded-lg px-4 py-2 shadow"
           >
-            <option value={2025}>2025</option>
-            <option value={2026}>2026</option>
+            {[yearActual, yearActual - 1].map((year) => (
+              <option key={year} value={year}>
+                {year}
+              </option>
+            ))}
           </select>
         </div>
 
         <div>
-          <label className="mr-2 font-semibold">Semestre:</label>
+          <label className="mr-2 font-semibold">Trimestre:</label>
           <select
-            value={semestre}
-            onChange={(e) => setSemestre(Number(e.target.value))}
+            value={trimestre}
+            onChange={(e) => setTrimestre(Number(e.target.value))}
             className="border rounded-lg px-4 py-2 shadow"
           >
-            <option value={1}>Semestre 1 (Enero - Junio)</option>
-            <option value={2}>Semestre 2 (Julio - Diciembre)</option>
+            <option value={1}>Trimestre 1 (Enero - Marzo)</option>
+            <option value={2}>Trimestre 2 (Abril - Junio)</option>
+            <option value={3}>Trimestre 3 (Julio - Septiembre)</option>
+            <option value={4}>Trimestre 4 (Octubre - Diciembre)</option>
           </select>
         </div>
       </div>
