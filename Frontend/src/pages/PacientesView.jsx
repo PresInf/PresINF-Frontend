@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { MdDelete, MdEdit } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 import instance from "../api/axios";
@@ -29,13 +29,21 @@ function PacientesLista() {
   const [toDelete, setToDelete] = useState(null); // id_persona
   const [editingPacienteId, setEditingPacienteId] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [showFilter, setShowFilter] = useState(false);
+  const [filters, setFilters] = useState({
+    search: "",
+    generoId: "",
+    localidadId: "",
+    provinciaId: "",
+    tipoId: "",
+  });
   const [genMap, setGenMap] = useState({});
   const [locMap, setLocMap] = useState({});
   const [provMap, setProvMap] = useState({});
   const [tipoMap, setTipoMap] = useState({});
   const navigate = useNavigate();
   const notify = useNotify();
-  const pageSize = 6; // items por página
+  const pageSize = 8; // items por página
 
   const normalizeFromPacientes = (arr = []) => {
     return arr.map((row) => {
@@ -158,16 +166,59 @@ function PacientesLista() {
 
   useEffect(() => { load(); }, []);
 
-  // ensure currentPage stays within range when items change
+  // Filtrado en cliente con estilo similar a otros módulos
+  const filteredItems = useMemo(() => {
+    const q = (filters.search || "").trim().toLowerCase();
+    return items.filter((pac) => {
+      const generoText = pac.genero || (pac.generoId ? genMap[pac.generoId] : '') || '';
+      const localidadText = pac.localidad || (pac.localidadId ? locMap[pac.localidadId] : '') || '';
+      const provinciaText = pac.provincia || (pac.provinciaId ? provMap[pac.provinciaId] : '') || '';
+      const tipoText = pac.tipo || (pac.tipoId ? tipoMap[pac.tipoId] : '') || '';
+
+      if (q) {
+        const hayMatch = [
+          pac.nombre,
+          pac.apellido,
+          pac.dni,
+          generoText,
+          localidadText,
+          provinciaText,
+          tipoText,
+        ]
+          .filter(Boolean)
+          .some((v) => String(v).toLowerCase().includes(q));
+        if (!hayMatch) return false;
+      }
+
+      if (filters.generoId && String(pac.generoId ?? "") !== String(filters.generoId)) return false;
+      if (filters.localidadId && String(pac.localidadId ?? "") !== String(filters.localidadId)) return false;
+      if (filters.provinciaId && String(pac.provinciaId ?? "") !== String(filters.provinciaId)) return false;
+      if (filters.tipoId && String(pac.tipoId ?? "") !== String(filters.tipoId)) return false;
+      return true;
+    });
+  }, [items, filters, genMap, locMap, provMap, tipoMap]);
+
+  // ensure currentPage stays within range when items or filters change
   useEffect(() => {
-    const totalPages = Math.max(1, Math.ceil(items.length / pageSize));
+    const totalPages = Math.max(1, Math.ceil(filteredItems.length / pageSize));
     if (currentPage > totalPages) setCurrentPage(1);
-  }, [items]);
+  }, [filteredItems, currentPage]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filters]);
 
   // paged items for current page
-  const totalPages = Math.max(1, Math.ceil(items.length / pageSize));
+  const totalPages = Math.max(1, Math.ceil(filteredItems.length / pageSize));
   const startIndex = (currentPage - 1) * pageSize;
-  const pagedItems = items.slice(startIndex, startIndex + pageSize);
+  const pagedItems = filteredItems.slice(startIndex, startIndex + pageSize);
+
+  const getPaginationRange = () => {
+    if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
+    if (currentPage <= 4) return [1, 2, 3, 4, 5, '...', totalPages];
+    if (currentPage >= totalPages - 3) return [1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+    return [1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages];
+  };
 
   const handleEditClick = (personaId) => {
     // Abrir modal de edición en vez de navegar
@@ -200,16 +251,107 @@ function PacientesLista() {
       {/* Encabezado con título y botón */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4 ">
         <h2 className="text-xl font-bold">Listado de Pacientes</h2>
-        <button
-          type="button"
-          className="px-5 py-2 text-sm font-medium text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 rounded-lg"
-          onClick={() => navigate("/pacientes")}
-        >
-          Agregar paciente
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            className="bg-gray-200 text-gray-800 px-3 py-2 rounded"
+            onClick={() => setShowFilter((s) => !s)}
+          >
+            {showFilter ? 'Ocultar filtros' : 'Mostrar filtros'}
+          </button>
+          <button
+            type="button"
+            className="px-5 py-2 text-sm font-medium text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 rounded-lg"
+            onClick={() => navigate("/pacientes")}
+          >
+            Agregar paciente
+          </button>
+        </div>
       </div>
 
-      {items.length === 0 ? (
+      {showFilter && (
+      <div className="bg-white border border-gray-200 rounded-lg p-4 mb-4 shadow-sm">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
+          <div className="lg:col-span-2">
+            <label className="text-sm text-gray-600">Buscar</label>
+            <input
+              type="text"
+              className="w-full border rounded px-3 py-2"
+              placeholder="Nombre, apellido, DNI..."
+              value={filters.search}
+              onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value }))}
+            />
+          </div>
+
+          <div>
+            <label className="text-sm text-gray-600">Género</label>
+            <select
+              className="w-full border rounded px-3 py-2"
+              value={filters.generoId}
+              onChange={(e) => setFilters((f) => ({ ...f, generoId: e.target.value }))}
+            >
+              <option value="">Todos</option>
+              {Object.entries(genMap).map(([id, text]) => (
+                <option key={id} value={id}>{text}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="text-sm text-gray-600">Localidad</label>
+            <select
+              className="w-full border rounded px-3 py-2"
+              value={filters.localidadId}
+              onChange={(e) => setFilters((f) => ({ ...f, localidadId: e.target.value }))}
+            >
+              <option value="">Todas</option>
+              {Object.entries(locMap).map(([id, text]) => (
+                <option key={id} value={id}>{text}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="text-sm text-gray-600">Provincia</label>
+            <select
+              className="w-full border rounded px-3 py-2"
+              value={filters.provinciaId}
+              onChange={(e) => setFilters((f) => ({ ...f, provinciaId: e.target.value }))}
+            >
+              <option value="">Todas</option>
+              {Object.entries(provMap).map(([id, text]) => (
+                <option key={id} value={id}>{text}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="text-sm text-gray-600">Tipo</label>
+            <select
+              className="w-full border rounded px-3 py-2"
+              value={filters.tipoId}
+              onChange={(e) => setFilters((f) => ({ ...f, tipoId: e.target.value }))}
+            >
+              <option value="">Todos</option>
+              {Object.entries(tipoMap).map(([id, text]) => (
+                <option key={id} value={id}>{text}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+        <div className="mt-3 flex justify-end">
+          <button
+            type="button"
+            className="bg-gray-200 text-gray-800 px-4 py-2 rounded hover:bg-gray-300"
+            onClick={() => setFilters({ search: "", generoId: "", localidadId: "", provinciaId: "", tipoId: "" })}
+          >
+            Limpiar filtros
+          </button>
+        </div>
+      </div>
+      )}
+
+      {filteredItems.length === 0 ? (
         <p>No hay pacientes registrados.</p>
       ) : (
         <div className="w-full overflow-x-hidden">
@@ -263,11 +405,11 @@ function PacientesLista() {
             <div className="text-sm text-gray-600">
               Mostrando
               {' '}
-              <strong>{Math.min((currentPage - 1) * pageSize + 1, items.length)}</strong>
+              <strong>{Math.min((currentPage - 1) * pageSize + 1, filteredItems.length)}</strong>
               {' - '}
-              <strong>{Math.min(currentPage * pageSize, items.length)}</strong>
+              <strong>{Math.min(currentPage * pageSize, filteredItems.length)}</strong>
               {' de '}
-              <strong>{items.length}</strong>
+              <strong>{filteredItems.length}</strong>
             </div>
             <div className="flex items-center gap-2">
               <button
@@ -281,8 +423,12 @@ function PacientesLista() {
 
               {/* page numbers */}
               <div className="flex items-center gap-1">
-                {Array.from({ length: Math.max(1, Math.ceil(items.length / pageSize)) }).map((_, idx) => {
-                  const page = idx + 1;
+                {getPaginationRange().map((page, idx) => {
+                  if (page === '...') {
+                    return (
+                      <span key={`ellipsis_${idx}`} className="px-2 py-1 text-gray-500">...</span>
+                    );
+                  }
                   return (
                     <button
                       key={page}
@@ -299,8 +445,8 @@ function PacientesLista() {
               <button
                 type="button"
                 className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
-                onClick={() => setCurrentPage((p) => Math.min(Math.ceil(items.length / pageSize), p + 1))}
-                disabled={currentPage >= Math.ceil(items.length / pageSize)}
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage >= totalPages}
               >
                 Siguiente
               </button>
