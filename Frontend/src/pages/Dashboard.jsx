@@ -72,17 +72,45 @@ const Dashboard = () => {
           ],
         });
 
-        // cobertura por edad -> pie
+        // cobertura por edad -> pie (solo 4 grupos visibles)
         const cob = Array.isArray(coberturaRes.data) ? coberturaRes.data : [];
-        const pieLabels = cob.map((c) => c.rango || c.rango);
-        const pieCounts = cob.map((c) => Number(c.count || c.percent || 0));
+        const coberturaAgrupada = {
+          "Menos de 1 año": 0,
+          "12 a 18 meses": 0,
+          "4 a 6 años": 0,
+          "11 años": 0,
+        };
+
+        cob.forEach((c) => {
+          const rango = String(c?.rango || "").toUpperCase();
+          const valor = Number(c?.count ?? c?.percent ?? 0);
+
+          if (["MENOR DE 1 AÑO", "-1", "-1 AÑO", "0-3"].includes(rango)) {
+            coberturaAgrupada["Menos de 1 año"] += valor;
+            return;
+          }
+          if (["12 A 18 MESES", "12-18", "13-18"].includes(rango)) {
+            coberturaAgrupada["12 a 18 meses"] += valor;
+            return;
+          }
+          if (["4-6", "4-6 AÑOS"].includes(rango)) {
+            coberturaAgrupada["4 a 6 años"] += valor;
+            return;
+          }
+          if (["11", "11 AÑOS"].includes(rango)) {
+            coberturaAgrupada["11 años"] += valor;
+          }
+        });
+
+        const pieLabels = Object.keys(coberturaAgrupada);
+        const pieCounts = Object.values(coberturaAgrupada);
         setPieData({
-          labels: pieLabels.length ? pieLabels : ["0-5", "6-12", "13-18", "19-50", "50+"],
+          labels: pieLabels,
           datasets: [
             {
               label: "Cobertura",
-              data: pieCounts.length ? pieCounts : [25, 20, 15, 25, 15],
-              backgroundColor: ["#007bff", "#28a745", "#ffc107", "#dc3545", "#17a2b8"],
+              data: pieCounts,
+              backgroundColor: ["#007bff", "#28a745", "#ffc107", "#dc3545"],
               hoverOffset: 30,
             },
           ],
