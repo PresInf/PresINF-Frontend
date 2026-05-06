@@ -23,7 +23,7 @@ export default function Sidebar() {
 
   const showGestUsuario = ["Coordinador", "Directora"].includes(user?.rol?.nombre);
   const showPacientes = ["Coordinador", "Directora", "Enfermero"].includes(user?.rol?.nombre);
-  const showStatistics = ["Coordinador", "Directora"].includes(user?.rol?.nombre);
+  const showStatistics = ["Coordinador", "Directora", "Enfermero"].includes(user?.rol?.nombre);
 
   return (
     <>
