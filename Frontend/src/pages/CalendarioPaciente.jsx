@@ -30,7 +30,7 @@ const CalendarioPaciente = () => {
     ];
 
     const currentYearNum = new Date().getFullYear();
-    const years = Array.from({ length: 20 }, (_, i) => currentYearNum - 10 + i);
+    const years = Array.from({ length: 30 }, (_, i) => currentYearNum - 20 + i);
 
     // Modal state
     const [showModal, setShowModal] = useState(false);
@@ -185,7 +185,7 @@ const CalendarioPaciente = () => {
 
     useEffect(() => {
         if (id) loadCitas();
-    }, [id, currentMonth, currentYear]);
+    }, [id]); // Solo cargamos las citas una vez al montar el componente
 
     useEffect(() => {
         // Definimos la acción a ejecutar cuando el backend avise del cambio
