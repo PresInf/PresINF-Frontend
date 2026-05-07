@@ -89,6 +89,7 @@ export default function Graficos() {
   const [preselectedIdEdades, setPreselectedIdEdades] = useState(null);
   const [preselectedRangoTitulo, setPreselectedRangoTitulo] = useState(null);
   const [rangosEdades, setRangosEdades] = useState([]);
+  const [editingData, setEditingData] = useState(null);
 
   const metaTrimestral = Math.min(Math.max(trimestre, 1), 4) * 25;
 
@@ -141,7 +142,12 @@ export default function Graficos() {
         
         if (Array.isArray(poblaciones.data)) {
           poblaciones.data.forEach((p) => {
-            mapPoblaciones[p.id_edades] = p.poblacion;
+            mapPoblaciones[p.id_edades] = {
+              poblacion: p.poblacion,
+              id_poblacion_anual: p.id_poblacion_anual,
+              anio: p.anio,
+              id_edades: p.id_edades
+            };
           });
         }
         
@@ -172,6 +178,15 @@ export default function Graficos() {
   const handleAbrirFormulario = (idEdades, rangoTitulo) => {
     setPreselectedIdEdades(idEdades);
     setPreselectedRangoTitulo(rangoTitulo);
+    
+    // Si ya existe población para este rango, pasar los datos para editar
+    const datosPoblacion = poblacionesPorEdad[idEdades];
+    if (datosPoblacion && typeof datosPoblacion === 'object') {
+      setEditingData(datosPoblacion);
+    } else {
+      setEditingData(null);
+    }
+    
     setShowFormulario(true);
   };
 
@@ -179,6 +194,7 @@ export default function Graficos() {
     setShowFormulario(false);
     setPreselectedIdEdades(null);
     setPreselectedRangoTitulo(null);
+    setEditingData(null);
   };
 
   const handleSuccessFormulario = () => {
@@ -210,7 +226,8 @@ export default function Graficos() {
     
     // Si se proporciona id_edades, usar población específica de ese rango
     if (idEdades !== null && poblacionesPorEdad[idEdades]) {
-      poblacionBase = poblacionesPorEdad[idEdades];
+      const datoPoblacion = poblacionesPorEdad[idEdades];
+      poblacionBase = typeof datoPoblacion === 'object' ? datoPoblacion.poblacion : datoPoblacion;
     }
 
     if (!poblacionBase || poblacionBase === 0) {
@@ -285,9 +302,10 @@ export default function Graficos() {
             calcularPercent(v, rangoCorrespondiente?.id_edades)
           );
 
-          const tienePopulacion = rangoCorrespondiente && poblacionesPorEdad[rangoCorrespondiente.id_edades];
+          const datosPoblacion = rangoCorrespondiente ? poblacionesPorEdad[rangoCorrespondiente.id_edades] : null;
+          const tienePopulacion = datosPoblacion && (typeof datosPoblacion === 'object' ? datosPoblacion.poblacion : datosPoblacion);
           const poblacionInfo = tienePopulacion
-            ? `${poblacionesPorEdad[rangoCorrespondiente.id_edades]} personas`
+            ? `${typeof datosPoblacion === 'object' ? datosPoblacion.poblacion : datosPoblacion} personas`
             : 'Sin población cargada';
 
           return (
@@ -379,6 +397,7 @@ export default function Graficos() {
         rangosEdades={rangosEdades}
         preselectedIdEdades={preselectedIdEdades}
         preselectedRangoTitulo={preselectedRangoTitulo}
+        editingData={editingData}
       />
     </div>
   );

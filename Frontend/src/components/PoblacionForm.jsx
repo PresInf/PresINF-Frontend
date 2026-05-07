@@ -128,11 +128,13 @@ export default function PoblacionForm({
   if (!isOpen) return null;
 
   // Mostrar título personalizado si es pre-seleccionado
-  const titulo = preselectedRangoTitulo
-    ? `Cargar población: ${preselectedRangoTitulo}`
-    : editingData
-      ? 'Editar Población'
-      : 'Crear Población';
+  const titulo = editingData && preselectedRangoTitulo
+    ? `Editar población: ${preselectedRangoTitulo}`
+    : preselectedRangoTitulo
+      ? `Cargar población: ${preselectedRangoTitulo}`
+      : editingData
+        ? 'Editar Población'
+        : 'Crear Población';
 
   return (
     <div className="fixed inset-0 backdrop-blur-sm bg-black/20 flex items-center justify-center z-50">
