@@ -279,7 +279,7 @@ export default function VacunaForm({
                         })()}
 
                         {patientSuggestions.length === 0 && personaSuggestions.length === 0 && (
-                          <div className="p-2 text-gray-500">No hay coincidencias. Se creará automáticamente al enviar.</div>
+                          <div className="p-2 text-gray-500">No hay coincidencias.</div>
                         )}
                       </>
                     )}

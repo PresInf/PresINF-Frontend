@@ -151,37 +151,8 @@ const Vacunas = () => {
       } else if (form.id_persona) {
         payload = { ...base, id_persona: Number(form.id_persona), id_area_programatica: form.id_area_programatica ? Number(form.id_area_programatica) : undefined };
       } else {
-        // No existe paciente ni persona seleccionada: crear paciente rápido y usar su id
-        const raw = (form._person_search || '').trim();
-        let dni = null;
-        let nombre = '';
-        let apellido = '';
-        if (/^\d{6,}$/.test(raw)) {
-          dni = raw;
-          nombre = raw;
-          apellido = '';
-        } else {
-          const parts = raw.split(/\s+/).filter(Boolean);
-          if (parts.length === 0) {
-            notify.error('Ingrese nombre o DNI para crear paciente');
-            return;
-          } else if (parts.length === 1) {
-            nombre = parts[0];
-            apellido = '';
-          } else {
-            nombre = parts.slice(0, -1).join(' ');
-            apellido = parts.slice(-1).join(' ');
-          }
-        }
-
-        try {
-          const { data: created } = await instance.post('/pacientes/quick', { nombre, apellido, dni, id_area_programatica: form.id_area_programatica ? Number(form.id_area_programatica) : undefined });
-          if (!created || !created.id_paciente) throw new Error('No creado');
-          payload = { ...base, id_paciente: Number(created.id_paciente) };
-        } catch (err) {
-          notify.error('Error al crear paciente automáticamente');
-          return;
-        }
+        notify.error("Debe seleccionar un paciente de la lista o registrar uno nuevo desde el botón 'Cargar paciente'.");
+        return;
       }
 
       await createDose(payload);
