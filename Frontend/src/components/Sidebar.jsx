@@ -51,7 +51,7 @@ export default function Sidebar() {
           }`}
       >
         {/* Header con botón de cerrar */}
-        <div className="p-6 border-b border-gray-300 flex flex-col items-center relative bg-gray-100">
+        <div className="p-6 border-b border-gray-300 flex flex-col items-center relative bg-gray-100 overflow-visible">
           <button
             onClick={() => setIsOpen(false)}
             className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-gray-200 transition-colors group"
@@ -63,12 +63,18 @@ export default function Sidebar() {
             </svg>
           </button>
 
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-400 to-gray-500 flex items-center justify-center text-white font-semibold shadow-lg text-lg">
-            {user?.nombre?.split(" ").map(w => w[0]).join("").slice(0, 2) || "US"}
+          <div className="relative w-full pr-8">
+            <div className="flex flex-col items-center mx-auto">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-400 to-gray-500 flex items-center justify-center text-white font-semibold shadow-lg text-lg">
+                {user?.nombre?.split(" ").map(w => w[0]).join("").slice(0, 2) || "US"}
+              </div>
+              <h1 className="text-2xl font-display font-bold tracking-tight mt-2">PresInF</h1>
+              <p className="text-gray-500 text-sm mt-1">Sistema de Gestión</p>
+              <p className="font-bold text-gray-700 text-ss mt-2 text-center">{user?.nombre} | {user?.rol?.nombre}</p>
+            </div>
+
+            {/* NotificationBell moved to global header */}
           </div>
-          <h1 className="text-2xl font-display font-bold tracking-tight mt-2">PresInF</h1>
-          <p className="text-gray-500 text-sm mt-1">Sistema de Gestión</p>
-          <p className="font-bold text-gray-700 text-ss mt-2">{user?.nombre} | {user?.rol?.nombre}</p>
         </div>
 
         {/* Navigation */}
