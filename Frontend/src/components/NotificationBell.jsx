@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import {
     FaBell,
@@ -219,7 +220,7 @@ export default function NotificationBell({ onNavigate, global = false }) {
         ? 'fixed top-4 right-4 z-[70] inline-block'
         : 'relative inline-block';
 
-    return (
+    const bellContent = (
         <div className={wrapperClass} ref={panelRef}>
             {/* Botón de la campana */}
             <button
@@ -242,7 +243,7 @@ export default function NotificationBell({ onNavigate, global = false }) {
 
             {/* Dropdown de Notificaciones */}
             {open && (
-                <div className={`${global ? 'right-0 left-auto' : 'left-1/2 transform -translate-x-1/2 sm:left-auto sm:translate-x-0 sm:right-0'} absolute top-full z-[70] mt-3 w-[min(400px,95vw)] origin-top-right rounded-2xl border border-slate-200 bg-white shadow-2xl transition-all duration-200 ease-out`}> 
+                <div className="absolute right-0 top-full z-[70] mt-3 w-[min(400px,95vw)] origin-top-right rounded-2xl border border-slate-200 bg-white shadow-2xl transition-all duration-200 ease-out"> 
 
                         {/* Triángulo indicador: Solo visible en pantallas grandes */}
                         <div className="hidden sm:block absolute -top-1.5 right-[14px] h-3 w-3 rotate-45 border-l border-t bg-white" />
@@ -424,4 +425,10 @@ export default function NotificationBell({ onNavigate, global = false }) {
             )}
         </div>
     );
+
+    if (global && typeof document !== 'undefined') {
+        return createPortal(bellContent, document.body);
+    }
+
+    return bellContent;
 }

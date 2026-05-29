@@ -3,6 +3,7 @@
 import { AuthProvider, useAuth } from './context/authContext';
 import { AppRouter } from './routes/AppRoutes';
 import React, { lazy, Suspense } from 'react'; // 1. Importa lazy y Suspense
+import NotificationBell from './components/NotificationBell';
 
 const GlobalAlertChecker = lazy(() => import('./components/GlobalAlertChecker'));
 
@@ -18,6 +19,10 @@ const AppContent = () => {
         <Suspense fallback={null}>
           {!loading && isAuthenticated && <GlobalAlertChecker />}
         </Suspense>
+
+        {!loading && isAuthenticated && (
+          <NotificationBell global onNavigate={() => { /* noop: global placement */ }} />
+        )}
 
       </div>
     </div>
