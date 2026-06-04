@@ -252,8 +252,8 @@ export default function NotificationBell({ onNavigate, global = false }) {
                     <div className="relative flex items-start justify-between gap-3 overflow-hidden rounded-t-2xl bg-gradient-to-br from-slate-950 to-slate-800 px-4 py-4 text-white">
                         <div className="z-10">
                             <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Panel de Control</span>
-                            <h3 className="text-base font-semibold leading-tight text-white">{showHistory ? 'Historial de Notificaciones' : 'Próximos Vencimientos'}</h3>
-                            <p className="mt-1 text-[11px] text-slate-300">{showHistory ? 'Notificaciones leídas' : 'Margen actual de ±5 días respecto al límite.'}</p>
+                            <h3 className="text-base font-semibold leading-tight text-white">{showHistory ? 'Historial de Notificaciones' : 'Alertas de Vacunas'}</h3>
+                            <p className="mt-1 text-[11px] text-slate-300">{showHistory ? 'Notificaciones leídas' : 'Vacunas vencidas y próximas a vencer.'}</p>
                         </div>
                         <div className="flex items-center gap-2 z-10">
                             <button
