@@ -10,6 +10,7 @@ import interactionPlugin from '@fullcalendar/interaction';
 import esLocale from '@fullcalendar/core/locales/es';
 
 import socket from '../api/socket';
+import ObservacionesModal from '../components/ObservacionesModal';
 
 const CalendarioPaciente = () => {
     const { id } = useParams();
@@ -40,6 +41,8 @@ const CalendarioPaciente = () => {
     // Confirm Delete Modal state
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [citaToDelete, setCitaToDelete] = useState(null);
+
+    const [showObsModal, setShowObsModal] = useState(false);
 
     const parseDateFromDB = (val) => {
         if (!val) return null;
@@ -300,10 +303,16 @@ const CalendarioPaciente = () => {
                             onChange={handleYearChange}
                             className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:max-w-xs sm:text-sm sm:leading-6"
                         >
-                            {years.map(year => (
-                                <option key={year} value={year}>{year}</option>
+                            {years.map((year, index) => (
+                                <option key={index} value={year}>{year}</option>
                             ))}
                         </select>
+                        <button
+                            onClick={() => setShowObsModal(true)}
+                            className="bg-blue-500 text-white px-3 py-1.5 rounded text-sm hover:bg-blue-700 whitespace-nowrap shadow-sm"
+                        >
+                            Ver Observaciones
+                        </button>
                     </div>
 
                     <div className="flex items-center gap-4 text-sm text-gray-600">
@@ -436,6 +445,8 @@ const CalendarioPaciente = () => {
                     </div>
                 </div>
             )}
+
+            <ObservacionesModal isOpen={showObsModal} onClose={() => setShowObsModal(false)} pacienteId={id} />
         </div>
     );
 };
