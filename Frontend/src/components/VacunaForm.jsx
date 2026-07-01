@@ -3,6 +3,7 @@ import instance from "../api/axios";
 import { MdSave, MdKeyboardArrowDown, MdKeyboardArrowUp } from "react-icons/md";
 import PersonaModal from "./PersonaModal";
 import { useNotify } from "../context/notificationContext";
+import ObservacionesModal from "./ObservacionesModal";
 
 export default function VacunaForm({
   user,
@@ -19,6 +20,27 @@ export default function VacunaForm({
 }) {
     const notify = useNotify();
   const [open, setOpen] = useState(true);
+  
+  const [showObsModal, setShowObsModal] = useState(false);
+  const [obsIndependiente, setObsIndependiente] = useState("");
+  const [savingObs, setSavingObs] = useState(false);
+
+  const handleGuardarObservacionIndependiente = async () => {
+    if (!obsIndependiente.trim() || !form.id_paciente) return;
+    try {
+      setSavingObs(true);
+      await instance.post('/observaciones-paciente', {
+        id_paciente: Number(form.id_paciente),
+        observacion: obsIndependiente.trim()
+      });
+      notify.success('Observación de paciente guardada');
+      setObsIndependiente('');
+    } catch(e) {
+      notify.error('Error al guardar observación');
+    } finally {
+      setSavingObs(false);
+    }
+  };
 
   // Pacientes / personas search
   const [patientSearch, setPatientSearch] = useState("");
@@ -417,6 +439,30 @@ export default function VacunaForm({
               )}
             </div>
           </div>
+
+          <div className="mt-4 p-4 border rounded bg-gray-50">
+            <div className="flex justify-between items-center mb-2">
+              <label className="text-sm text-gray-700 font-medium">Observaciones</label>
+              <button type="button" disabled={!form.id_paciente} onClick={() => setShowObsModal(true)} className="text-xs text-blue-600 underline:disabled disabled:text-gray-400">
+                Ver Historial de Observaciones
+              </button>
+            </div>
+            <textarea 
+              value={obsIndependiente} 
+              onChange={(e) => setObsIndependiente(e.target.value)} 
+              disabled={!form.id_paciente}
+              className="border rounded px-3 py-2 w-full disabled:bg-gray-200 disabled:cursor-not-allowed" 
+              rows="2" 
+              placeholder={form.id_paciente ? "Ingresar observaciones" : "Seleccione un paciente primero"}
+            ></textarea>
+            <div className="flex justify-end mt-2">
+              <button type="button" disabled={!form.id_paciente || !obsIndependiente.trim() || savingObs} onClick={handleGuardarObservacionIndependiente} className="bg-gray-600 text-white px-4 py-1.5 rounded hover:bg-gray-700 text-sm disabled:opacity-50">
+                {savingObs ? 'Guardando...' : 'Guardar Observación'}
+              </button>
+            </div>
+          </div>
+
+          <ObservacionesModal isOpen={showObsModal} onClose={() => setShowObsModal(false)} pacienteId={form.id_paciente} />
 
           <div className="flex justify-end pt-2">
             <button disabled={loading} type="submit" className="inline-flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-lg hover:bg-blue-700 transition-colors"><MdSave /> Registrar dosis</button>

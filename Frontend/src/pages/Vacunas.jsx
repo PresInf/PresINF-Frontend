@@ -26,6 +26,7 @@ const Vacunas = () => {
     dosis_numero: undefined,
     external_source: undefined,
     external_id: undefined,
+    observaciones: "",
   });
 
   const [editingDoseId, setEditingDoseId] = useState(null);
@@ -36,6 +37,7 @@ const Vacunas = () => {
     dosis_numero: undefined,
     external_source: undefined,
     external_id: undefined,
+    observaciones: "",
   });
   // autocomplete state for lote in edit modal
   const [editLoteSearch, setEditLoteSearch] = useState('');
@@ -143,6 +145,7 @@ const Vacunas = () => {
         dosis_numero: form.dosis_numero ? Number(form.dosis_numero) : undefined,
         external_source: form.external_source || undefined,
         external_id: form.external_id || undefined,
+        observaciones: form.observaciones || undefined,
       };
 
       let payload;
@@ -162,6 +165,7 @@ const Vacunas = () => {
         id_paciente: "",
         id_persona: "",
         id_area_programatica: "",
+        observaciones: "",
       });
       notify.success("Dosis registrada");
     } catch (err) {
@@ -178,6 +182,7 @@ const Vacunas = () => {
       dosis_numero: d.dosis_numero ?? undefined,
       external_source: d.external_source ?? undefined,
       external_id: d.external_id ?? undefined,
+      observaciones: d.observaciones ?? "",
       id_lote: d.id_lote ?? d.lote?.id_lote ?? undefined,
       _lote_search: d.lote?.lote ?? (d.id_lote ? `Lote #${d.id_lote}` : ''),
     });
@@ -194,6 +199,7 @@ const Vacunas = () => {
         dosis_numero: doseForm.dosis_numero ? Number(doseForm.dosis_numero) : undefined,
         external_source: doseForm.external_source || undefined,
         external_id: doseForm.external_id || undefined,
+        observaciones: doseForm.observaciones || undefined,
       });
       setEditingDoseId(null);
       notify.success("Dosis actualizada");
@@ -204,7 +210,7 @@ const Vacunas = () => {
 
   const cancelEditDose = () => {
     setEditingDoseId(null);
-    setDoseForm({ fecha: "", id_vacuna: "", id_paciente: "", dosis_numero: undefined, external_source: undefined, external_id: undefined });
+    setDoseForm({ fecha: "", id_vacuna: "", id_paciente: "", dosis_numero: undefined, external_source: undefined, external_id: undefined, observaciones: "" });
   };
 
 
@@ -376,6 +382,10 @@ const Vacunas = () => {
                 <label className="block mb-1 font-medium">External id</label>
                 <input type="text" value={doseForm.external_id ?? ''} onChange={(e) => setDoseForm(s => ({ ...s, external_id: e.target.value }))} className="w-full border px-3 py-2 rounded" />
               </div>
+            </div>
+            <div>
+              <label className="block mb-1 font-medium">Observaciones</label>
+              <textarea value={doseForm.observaciones ?? ''} onChange={(e) => setDoseForm(s => ({ ...s, observaciones: e.target.value }))} className="w-full border px-3 py-2 rounded" rows="2" placeholder="Opcional: detalles de la dosis, institución, etc."></textarea>
             </div>
           </div>
           <div className="flex justify-end gap-2">
